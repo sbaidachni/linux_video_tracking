@@ -5,7 +5,7 @@ CC=g++
 CDEFS=
 CFLAGS= -O0 -g $(INCLUDE_DIRS) $(CDEFS) -Wall
 LIBS= -lrt
-CPPLIBS= 
+CPPLIBS= -lopencv_core -lopencv_flann -lopencv_video
 
 HFILES= 
 CFILES= 
@@ -24,7 +24,7 @@ distclean:
 	-rm -f *.o *.d
 
 capture: capture.o
-	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $@.o `pkg-config --libs opencv` $(CPPLIBS) -lpthread -lrt
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $@.o `pkg-config --libs opencv` -lstdc++ $(CPPLIBS) -lpthread -lrt
 
 depend:
 
@@ -32,4 +32,4 @@ depend:
 	$(CC) $(CFLAGS) -c $<
 
 .cpp.o:
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -lstdc++ -c $<
