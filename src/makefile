@@ -5,7 +5,7 @@ CC=g++
 CDEFS=
 CFLAGS= -O0 -g $(INCLUDE_DIRS) $(CDEFS) -Wall
 LIBS= -lrt
-CPPLIBS= -lopencv4_core -lopencv4_flann -lopencv4_video
+CPPLIBS= -lopencv_core
 
 HFILES= 
 CFILES= 
