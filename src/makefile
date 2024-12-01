@@ -24,7 +24,7 @@ distclean:
 	-rm -f *.o *.d
 
 capture: capture.o
-	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $@.o `pkg-config --libs opencv` -lstdc++ $(CPPLIBS) -lpthread -lrt
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $@.o `pkg-config --libs opencv4` -lstdc++ $(CPPLIBS) -lpthread -lrt
 
 depend:
 
