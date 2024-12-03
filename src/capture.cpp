@@ -15,6 +15,10 @@
 
 #include <signal.h>
 #include <iostream>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/fb.h>
+#include <sys/mman.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -498,6 +502,27 @@ void *Service_3(void *threadp)
     int nbytes;
     int count_image = 0;
 
+    // Open the frame buffer device
+    int fb_fd = open("/dev/fb0", O_RDWR);
+    if (fb_fd == -1) {
+        std::cerr << "Error: Could not open frame buffer device!" << std::endl;
+    }
+
+    // Get screen information
+    struct fb_var_screeninfo vinfo;
+    if (ioctl(fb_fd, FBIOGET_VSCREENINFO, &vinfo)) {
+        std::cerr << "Error: Could not get screen information!" << std::endl;
+        close(fb_fd);
+    }
+
+    // Map the frame buffer to memory
+    size_t screensize = vinfo.yres_virtual * vinfo.xres_virtual * vinfo.bits_per_pixel / 8;
+    uint8_t* fb_ptr = (uint8_t*)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fb_fd, 0);
+    if (fb_ptr == MAP_FAILED) {
+        std::cerr << "Error: Could not map frame buffer to memory!" << std::endl;
+        close(fb_fd);
+    }
+
     do // check for synchronous abort request
     {
         sem_wait(&semS3);
@@ -510,21 +535,35 @@ void *Service_3(void *threadp)
         while (((nbytes = mq_receive (mymq, buffer, MAX_MSG_SIZE, &prio)) !=-1))
         {
             struct init_img_message *msg = (struct init_img_message *)buffer;
+
+            // TO TEST ONLY ON a LOCAL
             count_image++;
             sprintf(filename, "img_%d.jpg", count_image);
             if (!cv::imwrite(filename, msg->currframe)) 
             {
                 std::cerr << "Error: Could not save image to file" << std::endl;
             }
+            // END TEST BLOCK
+
+            // Resize the image to fit the screen
+            cv::resize(msg->currframe, msg->currframe, cv::Size(vinfo.xres, vinfo.yres));
+
+            // Copy the image data to the frame buffer
+            memcpy(fb_ptr, (msg->currframe).data, screensize);
         }
         mq_close (mymq);
     }
     while(!abortS3);
 
+    // Unmap and close the frame buffer
+    munmap(fb_ptr, screensize);
+    close(fb_fd);
+
     // Resource shutdown here
     //
     pthread_exit((void *)0);
 }
+
 
 double getTimeMsec(void)
 {
