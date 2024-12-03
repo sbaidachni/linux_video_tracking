@@ -34,7 +34,7 @@ using namespace std;
 #define NUM_THREADS (3)
 
 #define SKIP_ITERATIONS (1)
-#define IMAGE_ITERATIONS (100)
+#define IMAGE_ITERATIONS (20)
 #define RATE (100)
 
 cv::Mat buffer_img[30];
@@ -72,6 +72,7 @@ struct mq_attr mq_attr;
 struct init_img_message 
 {
   cv::Mat currframe;
+  int idx;
 };
 
 typedef struct
@@ -401,6 +402,7 @@ void *Service_1(void *threadp)
             sprintf(time_text, "%6.3lf",  current_realtime-start_realtime);
 
             msg.currframe = buffer_img[buffer_idx]; //currframe;
+            msg.idx = buffer_idx;
             buffer_idx++;
 
             if((nbytes = mq_send(mymq, (const char *)&msg, sizeof (struct init_img_message), 30)) == ERROR)
@@ -446,6 +448,17 @@ void *Service_2(void *threadp)
 
             mq_close (mymq);
 
+            Mat gray_img;
+            cvtColor(cf, gray_img, COLOR_BGR2GRAY);
+
+            Point topLeft(gray_img.cols / 3, gray_img.rows / 3);
+            Point bottomRight(2 * gray_img.cols / 3, 2 * gray_img.rows / 3);
+
+            // Draw the rectangle (color: blue, thickness: 2)
+            rectangle(gray_img, topLeft, bottomRight, Scalar(255, 0, 0), 2);
+
+            buffer_img[msg->idx] = gray_img;
+
             mymq = mq_open(SNDRCV_MQ_F, O_CREAT|O_RDWR, S_IRWXU, &mq_attr);
 
             if(mymq < 0)
@@ -456,7 +469,7 @@ void *Service_2(void *threadp)
 
             struct init_img_message msg_out;
 
-            msg_out.currframe = cf;
+            msg_out.currframe = gray_img;
 
             if((nbytes = mq_send(mymq, (const char *)&msg_out, sizeof (struct init_img_message), 30)) == ERROR)
             {
