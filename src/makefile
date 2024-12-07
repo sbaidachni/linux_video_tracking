@@ -1,6 +1,6 @@
 INCLUDE_DIRS = "-I/usr/local/include/opencv4"
 LIB_DIRS = 
-CC=g++
+CC=$(CROSS_COMPILE)gcc
 
 CDEFS=
 CFLAGS= -O0 -g $(INCLUDE_DIRS) $(CDEFS) -Wall
