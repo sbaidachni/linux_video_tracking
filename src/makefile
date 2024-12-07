@@ -1,4 +1,4 @@
-INCLUDE_DIRS = 
+INCLUDE_DIRS = "-I/usr/local/include/opencv4"
 LIB_DIRS = 
 CC=g++
 

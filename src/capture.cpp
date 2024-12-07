@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdexcept>
 
 #include <pthread.h>
 #include <sched.h>
@@ -38,7 +39,7 @@ using namespace std;
 #define NUM_THREADS (3)
 
 #define SKIP_ITERATIONS (1)
-#define IMAGE_ITERATIONS (20)
+#define IMAGE_ITERATIONS (100)
 #define RATE (100)
 
 cv::Mat buffer_img[30];
@@ -523,6 +524,8 @@ void *Service_3(void *threadp)
         close(fb_fd);
     }
 
+    std::cout<<vinfo.yres_virtual<<"\n"<<vinfo.xres_virtual;
+
     do // check for synchronous abort request
     {
         sem_wait(&semS3);
@@ -545,11 +548,29 @@ void *Service_3(void *threadp)
             }
             // END TEST BLOCK
 
-            // Resize the image to fit the screen
-            cv::resize(msg->currframe, msg->currframe, cv::Size(vinfo.xres, vinfo.yres));
+            try
+            {
+                // Resize the image to fit the screen
+                //cv::resize(msg->currframe, msg->currframe, cv::Size(vinfo.xres, vinfo.yres));
+                //memcpy(fb_ptr, (msg->currframe).data, screensize);
 
-            // Copy the image data to the frame buffer
-            memcpy(fb_ptr, (msg->currframe).data, screensize);
+                //if we need to copy the image as is
+                int width = msg->currframe.cols; 
+                int height = msg->currframe.rows; 
+                int channels = msg->currframe.channels(); 
+                std::cout << "Width: " << width << std::endl;
+                std::cout << "Height: " << height << std::endl;
+                std::cout << "Channels: "<<channels<<std::endl;
+
+                // Copy the image data to the frame buffer
+                memcpy(fb_ptr, (msg->currframe).data, width*height*channels);
+            }
+            catch (const exception& e) 
+            {
+                // print the exception
+                cout << "Exception " << e.what() << endl;
+            }
+
         }
         mq_close (mymq);
     }
